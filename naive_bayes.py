@@ -9,23 +9,22 @@ class NaiveBayes:
 
     Usage:
     ------
-    For example, we would like to learn a binary classification dataset, where X0 is a discrete feature with
-    3 categories, X1 is a continuous feature, and X2 is a binary feature (as below):
-    ------------------------
-    | X0 |  X1   | X2  | y |
-    ------------------------
-    | 1  | 2.315 |  0  | 0 |
-    | 0  | 1.744 |  0  | 1 |
-    | 2  | 0.289 |  1  | 1 |
-    | 2  | 4.413 |  0  | 0 |
-    |          ...         |
-    ------------------------
-    The following code could fit a model and make predictions:
+    For example, we would like to learn a binary classification dataset, where column 0 (3 categories) and
+    column 2 (2 categories) are discrete features, and column 1 is a continuous feature (as below)::
 
-    from naive_bayes import NaiveBayes
-    mnb = NaiveBayes(categorical_features=[0, 2])
-    mnb.fit(X_train, y_train)
-    y_pred = mnb.predict(X_test)
+        X_train = np.array([[1, 2.315, 0],
+                            [0, 1.744, 0],
+                            [2, 0.289, 1],
+                            [2, 4.413, 0]])
+        y_train = np.array([0, 1, 1, 0])
+
+    (if values of continuous features are large, it is best to normalize them.) The following code could fit
+    a model and make predictions::
+
+        from naive_bayes import NaiveBayes
+        mnb = NaiveBayes(categorical_features=[0, 2])
+        mnb.fit(X_train, y_train)
+        y_pred = mnb.predict(X_test)
     """
 
     def __init__(self, categorical_features=None, alpha_cont=1e-9, alpha_cat=1.0):
@@ -67,6 +66,7 @@ class NaiveBayes:
 
         :param y_train: the array of training labels
         """
+
         self.priors = np.bincount(y_train) / y_train.shape[0]
 
     def extract_features_by_class(self, X_train: np.ndarray, y_train: np.ndarray, feature_type='continuous'):
@@ -79,6 +79,7 @@ class NaiveBayes:
         or 'categorical')
         :return: a list of training design matrices separated by class
         """
+
         features = self.continuous_features if feature_type == 'continuous' else self.categorical_features
         # Specify the structure of returned list
         class_count = np.bincount(y_train)
@@ -96,10 +97,8 @@ class NaiveBayes:
     def compute_gaussian_mean_var(self):
         """
         Compute mean and variance for all continuous data
-
-        :param X_train: the design matrix
-        :param y_train: the array of labels
         """
+
         # Finally, calculate mean and standard deviations
         for i in range(self.num_classes):
             for j in range(self.num_cont_features):
@@ -113,13 +112,13 @@ class NaiveBayes:
         :param x: a data point
         :return an array of likelihoods
         """
+
         cont_likelihoods = np.ones(shape=self.num_classes)
         for i in range(self.num_classes):
             likelihood = 1.0
             for j in range(self.num_cont_features):
                 cur_value = x[self.continuous_features[j]]
-                likelihood = likelihood * tools.gaussian_pdf(cur_value,
-                                                             self.gaussian_mean[i, j], self.gaussian_var[i, j])
+                likelihood *= tools.gaussian_pdf(cur_value, self.gaussian_mean[i, j], self.gaussian_var[i, j])
             cont_likelihoods[i] = likelihood
         return cont_likelihoods
 
@@ -130,6 +129,7 @@ class NaiveBayes:
 
         :param X_train: the training design matrix
         """
+
         for i in range(self.num_cat_features):
             num_categories = np.bincount(X_train[:, self.categorical_features[i]].astype(int)).shape[0]
             self.frequency_tables[i] = np.zeros(shape=(num_categories, self.num_classes))
@@ -149,6 +149,7 @@ class NaiveBayes:
         :param x: a data point
         :return: an array of likelihoods
         """
+
         cat_likelihoods = np.ones(shape=self.num_classes)
         for i in range(self.num_classes):
             likelihood = 1.0
@@ -156,10 +157,10 @@ class NaiveBayes:
                 cur_category = int(x[self.categorical_features[j]])
                 # If there is an unseen category, compute with pure smoothing to avoid zero probabilities
                 if cur_category >= self.frequency_tables[j].shape[0]:
-                    likelihood = likelihood * (self.alpha_cat / (self.X_train_classes_cat[i].shape[0]
-                                                                 + self.alpha_cat * self.num_cat_features))
+                    likelihood *= (self.alpha_cat /
+                                   (self.X_train_classes_cat[i].shape[0] + self.alpha_cat * self.num_cat_features))
                 else:
-                    likelihood = likelihood * self.frequency_tables[j][cur_category, i]
+                    likelihood *= self.frequency_tables[j][cur_category, i]
             cat_likelihoods[i] = likelihood
         return cat_likelihoods
 
@@ -171,6 +172,7 @@ class NaiveBayes:
         :param likelihoods: the array of likelihoods of every class
         :return: an array of posterior probabilities
         """
+
         posteriors = np.zeros(shape=self.num_classes)
         for i in range(self.num_classes):
             posteriors[i] = likelihoods[i] * self.priors[i]
@@ -183,6 +185,7 @@ class NaiveBayes:
         :param X_train: the training design matrix
         :param y_train: the array of training labels
         """
+
         # Learn class prior probabilities
         self.learn_priors(y_train)
         # Configure remaining attributes according to the training data
@@ -207,6 +210,7 @@ class NaiveBayes:
         :param X_test: the test design matrix
         :return: an array of predicted labels
         """
+
         num_samples = X_test.shape[0]
         y_pred = np.zeros(shape=num_samples, dtype=int)
         for i in range(num_samples):

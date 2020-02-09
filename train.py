@@ -6,11 +6,12 @@ from logistic_regression import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import LabelEncoder
 from naive_bayes import NaiveBayes
-from cross_validation import cross_validate
+from cross_validation import k_fold
 
 
-def load_dataset(dataset_filename: str):
-    df = pd.read_csv(dataset_filename, header=None)
+def load_dataset(filename: str):
+    # TODO: Write a unified load_dataset() method
+    df = pd.read_csv(filename, header=None)
     # df.drop(columns=[1], axis=1, inplace=True)
     dataset = df.values
 
@@ -49,7 +50,8 @@ if __name__ == '__main__':
     # y_pred_NB_baseline = NB.predict(X_test)
 
     # cross_validate(X_train, y_train, LR)
-    cross_validate(X_train, y_train, NB)
+    avg_acc, k_acc = k_fold(X_train, y_train, NB)
+    print(f'Average accuracy = {avg_acc * 100:.1f}%, which is the average of {k_acc}')
 
     # accuracy_LR = tools.evaluate_acc(y_test, y_pred_LR) * 100
     # accuracy_LR_baseline = tools.evaluate_acc(y_test, y_pred_LR_baseline) * 100
@@ -57,4 +59,3 @@ if __name__ == '__main__':
     # accuracy_NB_baseline = tools.evaluate_acc(y_test, y_pred_NB_baseline) * 100
     # print(f'Logistic Regression accuracy: {accuracy_LR:.1f}%, while scikit-learn gives {accuracy_LR_baseline:.1f}%')
     # print(f'Naive Bayes accuracy: {accuracy_NB:.1f}%, while scikit-learn gives {accuracy_NB_baseline:.1f}%')
-    # print(f'Accuracy: {accuracy_NB:.1f}%')
